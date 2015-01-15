@@ -137,6 +137,17 @@ NSString * const MMRecordAttributeAlternateNameKey = @"MMRecordAttributeAlternat
     return NO;
 }
 
++ (MMRecordOptionsEntityPrimaryKeyInjectionBlock)entityPrimaryKeyInjectionBlock {
+    return nil;
+}
+
++ (MMRecordOptionsDeleteOrphanedRecordBlock)deleteOrphanedRecordBlock {
+    return nil;
+}
+
++ (MMRecordOptionsRecordPrePopulationBlock)recordPrePopulationBlock {
+    return nil;
+}
 
 #pragma mark - Request Options Configuration Methods
 
@@ -162,9 +173,9 @@ NSString * const MMRecordAttributeAlternateNameKey = @"MMRecordAttributeAlternat
     options.pageManagerClass = [[self server] pageManagerClass];
     options.debugger = [[MMRecordDebugger alloc] init];
     options.debugger.loggingLevel = [self loggingLevel];
-    options.deleteOrphanedRecordBlock = nil;
-    options.entityPrimaryKeyInjectionBlock = nil;
-    options.recordPrePopulationBlock = nil;
+    options.deleteOrphanedRecordBlock = [self deleteOrphanedRecordBlock];
+    options.entityPrimaryKeyInjectionBlock = [self entityPrimaryKeyInjectionBlock];
+    options.recordPrePopulationBlock = [self recordPrePopulationBlock];
     return options;
 }
 
