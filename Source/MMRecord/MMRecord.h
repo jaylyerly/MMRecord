@@ -204,6 +204,66 @@ extern NSString * const MMRecordAttributeAlternateNameKey;
  callback queues will be added in a future version.
  */
 
+///-----------------------------------------------
+/// @name Block typedefs for MMRecordOptions
+///-----------------------------------------------
+
+/**
+ This block should be used to conditionally delete orphaned records if they are not returned in a
+ request's response.
+ 
+ @param orphan The record which has now become an orphan.
+ @param populatedRecords An array of records that were populated from the response.
+ @param responseObject The JSON response object from the request.
+ @param stop A boolean reference you can set to YES to short circuit the orphan deletion process.
+ @return BOOL You should return YES if you want to delete the orphan and NO otherwise.
+ */
+typedef BOOL (^MMRecordOptionsDeleteOrphanedRecordBlock)(MMRecord *orphan,
+                                                         NSArray *populatedRecords,
+                                                         id responseObject,
+                                                         BOOL *stop);
+
+/**
+ This block should be used to optionally inject a primary key that will be used to uniquely identify
+ a record of a given type. The most common use case for this block should be when an API's JSON
+ response does not contain a record primary key, but the caller who makes the request already has
+ that key. Generally this will be the root level initial entity that the request to MMRecord is
+ going to return. This could be used to return primary keys for sub-entities, but this is generally
+ not recommended.
+ 
+ You may choose to generate a primary key for a given record based on the dictionary passed into
+ the block. Hashing the dictionary to create the primary key may prove to be a valid solution for
+ your specific use case.
+ 
+ @warning This block will only be executed if the primary key for a record cannot be obtained from
+ the record dictionary.
+ 
+ @discussion This method can return nil.
+ 
+ @param entity The entity type to evaluate and return a primary key for.
+ @param dictionary The dictionary being used to populate the given record.
+ @param parentProtoRecord The parent proto record of the one whose primary key is being evaluated
+ here. This may be nil if the entity is the initial entity being populated by MMRecord.
+ @return id The primary key to associate with the record. This value must conform to NSCopying.
+ */
+typedef id<NSCopying> (^MMRecordOptionsEntityPrimaryKeyInjectionBlock)(NSEntityDescription *entity,
+                                                                       NSDictionary *dictionary,
+                                                                       MMRecordProtoRecord *parentProtoRecord);
+
+/**
+ This block may be used for inserting custom logic into the record population workflow. This block,
+ if defined, will be executed prior to the MMRecordMarshaler's -populateProtoRecord: method.
+ 
+ @warning This block should only be used in relatively rare cases. It is not a substitute for proper
+ model configuration or for marshaler/representation subclassing. It is meant for rare cases where
+ injecting data into the population flow is required for accurate record population. Because this
+ block will be executed for each proto record for a given request, performance issues may arrise.
+ Please use caution.
+ @param protoRecord The proto record which is about to be populated.
+ */
+typedef void (^MMRecordOptionsRecordPrePopulationBlock)(MMRecordProtoRecord *protoRecord);
+
+
 @interface MMRecord : NSManagedObject
 
 ///--------------------------------
@@ -291,6 +351,39 @@ extern NSString * const MMRecordAttributeAlternateNameKey;
  for performance considerations and is not required.
  */
 + (NSString *)keyPathForMetaData;
+
+/**
+ This method returns a block that will be executed when a record is populated and no
+ primary key to identify it is found in the populating record dictionary. This allows you to return
+ your own primary key that will be used to uniquely identify the record. You may also choose to
+ generate a primary key for a given record based on the dictionary passed into the block. Hashing
+ the dictionary to create the primary key may prove to be a valid solution for your specific use
+ case.
+ 
+ @discussion This block should return nil if you have no way to uniquely identify a record for the
+ given type of entity. The default implementation of this method returns nil (no block).
+ */
++ (MMRecordOptionsEntityPrimaryKeyInjectionBlock)entityPrimaryKeyInjectionBlock;
+
+/**
+ This method returns a block that will be executed once per record which was orphaned
+ by this request's response until either it has been called n times for n number of orphans or until
+ you pass YES for the stop parameter.
+ 
+ This block will only be called for orphans of the initial entity type that was requested by
+ MMRecord. Sub-entities or child-entities will not be considered as orphans.
+ 
+ @discussion The default implementation of this method returns nil (no block).
+ */
++ (MMRecordOptionsDeleteOrphanedRecordBlock)deleteOrphanedRecordBlock;
+
+/**
+ This method returns a block that will be executed immediately before record
+ population in order to perform some task like inserting data into the population process.
+ 
+ @discussion The default implementation of this method returns nil (no block).
+ */
++ (MMRecordOptionsRecordPrePopulationBlock)recordPrePopulationBlock;
 
 
 ///-----------------------------------------------
@@ -531,62 +624,6 @@ extern NSString * const MMRecordAttributeAlternateNameKey;
                failureBlock:(void(^)(NSError *error))failureBlock;
 
 @end
-
-
-/**
- This block should be used to conditionally delete orphaned records if they are not returned in a
- request's response.
- 
- @param orphan The record which has now become an orphan.
- @param populatedRecords An array of records that were populated from the response.
- @param responseObject The JSON response object from the request.
- @param stop A boolean reference you can set to YES to short circuit the orphan deletion process.
- @return BOOL You should return YES if you want to delete the orphan and NO otherwise.
- */
-typedef BOOL (^MMRecordOptionsDeleteOrphanedRecordBlock)(MMRecord *orphan,
-                                                         NSArray *populatedRecords,
-                                                         id responseObject,
-                                                         BOOL *stop);
-
-/**
- This block should be used to optionally inject a primary key that will be used to uniquely identify
- a record of a given type. The most common use case for this block should be when an API's JSON 
- response does not contain a record primary key, but the caller who makes the request already has 
- that key. Generally this will be the root level initial entity that the request to MMRecord is
- going to return. This could be used to return primary keys for sub-entities, but this is generally
- not recommended.
- 
- You may choose to generate a primary key for a given record based on the dictionary passed into 
- the block. Hashing the dictionary to create the primary key may prove to be a valid solution for 
- your specific use case.
- 
- @warning This block will only be executed if the primary key for a record cannot be obtained from 
- the record dictionary.
- 
- @discussion This method can return nil.
- 
- @param entity The entity type to evaluate and return a primary key for.
- @param dictionary The dictionary being used to populate the given record.
- @param parentProtoRecord The parent proto record of the one whose primary key is being evaluated
- here. This may be nil if the entity is the initial entity being populated by MMRecord.
- @return id The primary key to associate with the record. This value must conform to NSCopying.
- */
-typedef id<NSCopying> (^MMRecordOptionsEntityPrimaryKeyInjectionBlock)(NSEntityDescription *entity,
-                                                                       NSDictionary *dictionary,
-                                                                       MMRecordProtoRecord *parentProtoRecord);
-
-/**
- This block may be used for inserting custom logic into the record population workflow. This block, 
- if defined, will be executed prior to the MMRecordMarshaler's -populateProtoRecord: method.
- 
- @warning This block should only be used in relatively rare cases. It is not a substitute for proper
- model configuration or for marshaler/representation subclassing. It is meant for rare cases where
- injecting data into the population flow is required for accurate record population. Because this
- block will be executed for each proto record for a given request, performance issues may arrise.
- Please use caution.
- @param protoRecord The proto record which is about to be populated.
- */
-typedef void (^MMRecordOptionsRecordPrePopulationBlock)(MMRecordProtoRecord *protoRecord);
 
 
 /**
