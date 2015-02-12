@@ -400,7 +400,8 @@ typedef void (^MMRecordOptionsRecordPostPopulationBlock)(MMRecordProtoRecord *pr
 
 /**
  This method returns a block that will be executed immediately after record
- population in order to perform some task like building derived attributes.
+ population and relationships are estabished in order to perform some 
+ task like building derived attributes.
  
  @discussion The default implementation of this method returns nil (no block).
  */
@@ -761,7 +762,7 @@ typedef void (^MMRecordOptionsRecordPostPopulationBlock)(MMRecordProtoRecord *pr
 
 /**
  This option allows you to specify a block that will be executed immediately after record
- population in order to perform some task like creating dervied data.
+ population and relationships are established in order to perform some task like creating dervied data.
  
  @discussion Default value is nil which means population will be performed normally.
  */

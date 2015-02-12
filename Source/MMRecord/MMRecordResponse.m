@@ -416,6 +416,10 @@
 - (void)establishRelationshipsForAllRecords {
     for (MMRecordProtoRecord *protoRecord in self.protoRecords) {
         [self.representation.marshalerClass establishRelationshipsOnProtoRecord:protoRecord];
+
+        if (self.recordPostPopulationBlock != nil) {
+            self.recordPostPopulationBlock(protoRecord);
+        }
     }
 }
 
@@ -426,10 +430,6 @@
         }
         
         [self.representation.marshalerClass populateProtoRecord:protoRecord];
-
-        if (self.recordPostPopulationBlock != nil) {
-            self.recordPostPopulationBlock(protoRecord);
-        }
     }
 }
 
