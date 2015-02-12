@@ -41,6 +41,7 @@
 @property (nonatomic, strong) MMRecordRepresentation *representation;
 @property (nonatomic) BOOL hasRelationshipPrimaryKey;
 @property (nonatomic, copy) MMRecordOptionsRecordPrePopulationBlock recordPrePopulationBlock;
+@property (nonatomic, copy) MMRecordOptionsRecordPostPopulationBlock recordPostPopulationBlock;
 @property (nonatomic, strong) MMRecordDebugger *debugger;
 
 - (instancetype)initWithEntity:(NSEntityDescription *)entity;
@@ -147,6 +148,7 @@
         if ([NSClassFromString([entity managedObjectClassName]) isSubclassOfClass:[MMRecord class]]) {
             responseGroup = [[MMRecordResponseGroup alloc] initWithEntity:entity];
             responseGroup.recordPrePopulationBlock = self.options.recordPrePopulationBlock;
+            responseGroup.recordPostPopulationBlock = self.options.recordPostPopulationBlock;
             responseGroup.debugger = self.options.debugger;
             responseGroups[entityDescriptionsKey] = responseGroup;
         } else {
@@ -424,6 +426,10 @@
         }
         
         [self.representation.marshalerClass populateProtoRecord:protoRecord];
+
+        if (self.recordPostPopulationBlock != nil) {
+            self.recordPostPopulationBlock(protoRecord);
+        }
     }
 }
 

@@ -263,6 +263,19 @@ typedef id<NSCopying> (^MMRecordOptionsEntityPrimaryKeyInjectionBlock)(NSEntityD
  */
 typedef void (^MMRecordOptionsRecordPrePopulationBlock)(MMRecordProtoRecord *protoRecord);
 
+/**
+ This block may be used for inserting custom logic into the record population workflow. This block,
+ if defined, will be executed immediately after the MMRecordMarshaler's -populateProtoRecord: method.
+ 
+ @warning This block should only be used in relatively rare cases. It is not a substitute for proper
+ model configuration or for marshaler/representation subclassing. It is meant for rare cases where
+ post processing data into the population flow is required for accurate record population. Because this
+ block will be executed for each proto record for a given request, performance issues may arrise.
+ Please use caution.
+ @param protoRecord The proto record which has just been populated.
+ */
+typedef void (^MMRecordOptionsRecordPostPopulationBlock)(MMRecordProtoRecord *protoRecord);
+
 
 @interface MMRecord : NSManagedObject
 
@@ -385,6 +398,13 @@ typedef void (^MMRecordOptionsRecordPrePopulationBlock)(MMRecordProtoRecord *pro
  */
 + (MMRecordOptionsRecordPrePopulationBlock)recordPrePopulationBlock;
 
+/**
+ This method returns a block that will be executed immediately after record
+ population in order to perform some task like building derived attributes.
+ 
+ @discussion The default implementation of this method returns nil (no block).
+ */
++ (MMRecordOptionsRecordPostPopulationBlock)recordPostPopulationBlock;
 
 ///-----------------------------------------------
 /// @name Setting and Accessing the MMServer Class
@@ -738,6 +758,14 @@ typedef void (^MMRecordOptionsRecordPrePopulationBlock)(MMRecordProtoRecord *pro
  @discussion Default value is nil which means population will be performed normally.
  */
 @property (nonatomic, copy) MMRecordOptionsRecordPrePopulationBlock recordPrePopulationBlock;
+
+/**
+ This option allows you to specify a block that will be executed immediately after record
+ population in order to perform some task like creating dervied data.
+ 
+ @discussion Default value is nil which means population will be performed normally.
+ */
+@property (nonatomic, copy) MMRecordOptionsRecordPostPopulationBlock recordPostPopulationBlock;
 
 @end
 

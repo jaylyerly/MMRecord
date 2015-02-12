@@ -149,6 +149,10 @@ NSString * const MMRecordAttributeAlternateNameKey = @"MMRecordAttributeAlternat
     return nil;
 }
 
++ (MMRecordOptionsRecordPostPopulationBlock)recordPostPopulationBlock {
+    return nil;
+}
+
 #pragma mark - Request Options Configuration Methods
 
 + (void)setOptions:(MMRecordOptions *)options {
@@ -176,6 +180,7 @@ NSString * const MMRecordAttributeAlternateNameKey = @"MMRecordAttributeAlternat
     options.deleteOrphanedRecordBlock = [self deleteOrphanedRecordBlock];
     options.entityPrimaryKeyInjectionBlock = [self entityPrimaryKeyInjectionBlock];
     options.recordPrePopulationBlock = [self recordPrePopulationBlock];
+    options.recordPostPopulationBlock = [self recordPostPopulationBlock];
     return options;
 }
 
